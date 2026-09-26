@@ -14,7 +14,7 @@ Kit transversal para Claude Code. Objetivo: **gastar el modelo caro solo donde p
 ## Instalación (una vez por computador)
 
 ```bash
-git clone https://github.com/<dueño>/skills-optimizacion.git ~/skills-optimizacion
+git clone https://github.com/Ingenio-Advice/Skillset-Claude-optimizacion.git ~/skills-optimizacion
 ~/skills-optimizacion/install.sh
 ```
 
