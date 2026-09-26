@@ -23,6 +23,7 @@ Pide al explorador que reporte, con conteo de líneas:
 - Lo específico de un área (despliegue, base de datos, diseño) → sácalo a un skill del proyecto, que solo se carga cuando se usa.
 - Instrucciones de "leer documentación antes de codificar" → reemplázalas por "consulta la guía puntual del tema solo si vas a usar una API que no conoces".
 - Nada de historial, bitácoras ni pendientes dentro de CLAUDE.md; eso va en archivos aparte que se leen a demanda.
+- Si el archivo problemático lo regenera una herramienta (p. ej. `AGENTS.md` de `next dev`), no lo edites: agrega en `CLAUDE.md` una línea que acote la instrucción ("consulta solo la guía puntual de la API que vas a usar"). Un hallazgo de impacto alto nunca se deja "igual" sin proponer contrapeso.
 
 ## Salida
 
