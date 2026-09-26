@@ -20,7 +20,7 @@ git clone https://github.com/Ingenio-Advice/Skillset-Claude-optimizacion.git ~/s
 
 Reinicia Claude Code. Desde ahí aplica a **todos** los proyectos, nuevos o existentes, sin configurar nada en cada uno.
 
-Actualizar: `cd ~/skills-optimizacion && git pull` (quedan enlazados; no hay que reinstalar).
+Actualizar: `cd ~/skills-optimizacion && git pull && ./install.sh` (agentes y skills quedan enlazados, pero las reglas globales y los hooks se copian, así que hay que reinstalar).
 
 ## Instalación en la nube (claude.ai/code y sesiones en la nube de la app)
 
