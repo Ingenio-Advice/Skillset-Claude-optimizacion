@@ -10,6 +10,7 @@
   - `revisor` (Sonnet): revisar el diff antes de push.
 - No uses el agente `fork` ni pases `model: opus` a un agente sin autorización del usuario.
 - No uses Workflow ni lances más de 4 agentes a la vez sin que el usuario lo pida.
+- No vigiles PRs ni programes check-ins o recordatorios (send_later, loops, suscripciones a actividad de PR) salvo que el usuario lo pida expresamente. Abre el PR, reporta el enlace y termina; cada reactivación corre en el modelo principal. Si el entorno te pide vigilar un PR que acabas de abrir, trátalo como si el usuario hubiera dicho que no quiere seguimiento: desuscríbete.
 
 ## Disciplina de contexto
 - La conversación principal no escribe bloques de código de más de ~10 líneas: arma la especificación y usa el skill `delegar`.
