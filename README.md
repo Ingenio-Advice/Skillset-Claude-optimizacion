@@ -41,7 +41,19 @@ Se hace una vez por entorno (no por proyecto). Si falla, la sesión arranca igua
 - `~/.claude/agents/`: los 4 agentes con su modelo fijo.
 - `~/.claude/skills/`: `delegar`, `cerrar`, `dieta-contexto`.
 - `~/.claude/CLAUDE.md`: bloque de reglas de consumo (entre marcadores; se reemplaza al reinstalar y no toca tus otras reglas).
-- `~/.claude/settings.json`: `model: opusplan` y `CLAUDE_CODE_SUBAGENT_MODEL: sonnet`. Deja un respaldo `.bak`.
+- `~/.claude/settings.json`: `model: opusplan`, `CLAUDE_CODE_SUBAGENT_MODEL: sonnet` y los hooks. Deja un respaldo `.bak`.
+
+## Disparadores automáticos (hooks)
+
+Solo sugieren; ninguno bloquea ni ejecuta nada por su cuenta.
+
+| Hook | Cuándo | Qué hace |
+|---|---|---|
+| `session-start.sh` | Al abrir una sesión | Si el repo no tiene `.claude/dieta-contexto.md`, Claude te sugiere `/dieta-contexto`. |
+| `prompt-delegar.sh` | Cada mensaje tuyo | Si pides implementar/arreglar/construir, recuerda a Claude usar `delegar`. |
+| `stop-cerrar.sh` | Al terminar Claude | Si hay cambios sin commit, te muestra una línea sugiriendo `/cerrar` (una vez por conjunto de cambios). |
+
+El instalador los agrega sin borrar tus hooks propios (requiere `python3`; sin él, reemplaza la sección de hooks completa).
 
 ## Cómo trabajar
 
