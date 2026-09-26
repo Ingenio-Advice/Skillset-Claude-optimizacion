@@ -27,3 +27,5 @@ Pide al explorador que reporte, con conteo de líneas:
 ## Salida
 
 Tabla corta: hallazgo · líneas/impacto · recorte propuesto. Aplica los recortes solo con autorización del usuario; si los aplicas, hazlo con un `implementador`.
+
+Al terminar (se apliquen o no los recortes), crea `.claude/dieta-contexto.md` con la fecha y la tabla de hallazgos (máximo 20 líneas). Ese archivo es la marca que evita que el hook de inicio vuelva a sugerir la auditoría; debe quedar en el commit para que persista también en sesiones en la nube.

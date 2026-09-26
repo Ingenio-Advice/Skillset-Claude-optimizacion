@@ -1,0 +1,5 @@
+{
+  "SessionStart": [{"matcher": "startup", "hooks": [{"type": "command", "command": "__KIT__/hooks/session-start.sh"}]}],
+  "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "__KIT__/hooks/prompt-delegar.sh"}]}],
+  "Stop": [{"hooks": [{"type": "command", "command": "__KIT__/hooks/stop-cerrar.sh"}]}]
+}
