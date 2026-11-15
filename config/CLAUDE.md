@@ -24,4 +24,12 @@
 - Opciones o variantes de diseño (A, B, C) se corren a la vez en el VPS, no una tras otra.
 - Un proyecto se trabaja una etapa por sesión: al cerrar la etapa, `proyecto_flujo cerrar` escribe `TRASPASO.md`. La etapa siguiente arranca en sesión nueva leyendo solo ese archivo. Lo que no quepa en los JSON se anota en `notas_sesion.md` del proyecto.
 - El estado de las auditorías sale de `flujo estado`; no se anuncia nada como lanzado hasta que esté corriendo.
+
+## Orden: dónde vive cada cosa
+- Código: solo en GitHub (organización Ingenio-Advice). Un proyecto nuevo nace como repo privado ahí y se trabaja en sesiones cloud; nunca como carpeta suelta en el Escritorio, Documentos o Descargas.
+- En el Mac solo quedan `~/Developer/ingenio-devops` (`remoto`, vigilante del disco) y `~/Developer/skills-optimizacion` (hooks, agentes y skills de Claude). Si algo exige un clon local, va en `~/Developer/<repo>` y se borra al terminar.
+- Documentos que no son código: iCloud Drive, con «Optimizar almacenamiento» (quedan en la nube). Nada de copias sueltas en el Escritorio.
+- Secretos (`.env`, claves, tokens): en el gestor de contraseñas o en el VPS; nunca en git ni en un chat. Si una clave aparece en un log o transcripción, avisa de inmediato para rotarla.
+- Antes de borrar o mover un repo local: 1) todo empujado (ramas y cambios sin commit en `respaldo/<fecha>/…`), 2) ninguna sesión ni proceso con la carpeta como directorio de trabajo, 3) cada sesión activa ya movida a la nube o reemplazada por una sesión cloud con su resumen. Solo entonces se borra.
+- Ramas: se trabaja en `claude/<tema>`, nunca directo en `main`; tras fusionar el PR, la rama local se borra.
 <!-- skills-optimizacion:fin -->
