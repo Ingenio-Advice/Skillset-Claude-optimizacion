@@ -1,6 +1,6 @@
 ---
 name: delegar
-description: Convierte lo acordado en la conversación en una especificación cerrada y la entrega a los agentes de trabajo (implementador en Sonnet, verificador en Haiku) en lugar de ejecutarla con el modelo principal. Usar cuando el usuario diga "ejecútalo", "hazlo", "impleméntalo", "manos a la obra" o cuando termine una discusión de diseño y toque escribir código.
+description: Convierte lo acordado en la conversación en una especificación cerrada y la entrega a los agentes de trabajo (implementador y verificador en Haiku 5.5) en lugar de ejecutarla con el modelo principal. Usar cuando el usuario diga "ejecútalo", "hazlo", "impleméntalo", "manos a la obra" o cuando termine una discusión de diseño y toque escribir código.
 ---
 
 # Delegar
@@ -43,4 +43,4 @@ Máximo 6 líneas: qué quedó hecho, qué pasa o falla, qué decisión queda pe
 
 - No escribas código en la conversación principal salvo cambios de menos de ~10 líneas en un solo archivo.
 - No pidas a los agentes que devuelvan código ni logs completos.
-- Escalar a Opus (`model: opus` en la llamada del agente) solo si el usuario lo autoriza o si Sonnet falló dos veces en lo mismo.
+- Si Haiku falló dos veces en lo mismo, vuelve al usuario: él decide si se escala a Sonnet (`model: sonnet`) u Opus (`model: opus`) en la llamada del agente.
