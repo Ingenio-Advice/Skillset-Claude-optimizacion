@@ -22,19 +22,18 @@ Reinicia Claude Code. Desde ahí aplica a **todos** los proyectos, nuevos o exis
 
 Actualizar: `cd ~/skills-optimizacion && git pull && ./install.sh` (agentes y skills quedan enlazados, pero las reglas globales y los hooks se copian, así que hay que reinstalar).
 
-## Instalación en la nube (claude.ai/code y sesiones en la nube de la app)
+## Sesiones en la nube
 
-Cada sesión en la nube arranca con un `~/.claude` limpio. El kit se instala desde el **setup script** del entorno, que corre antes de cada sesión.
-
-En la app: menú del entorno de nube (barra de título de la sesión) → **Edit** → **Setup script**. Agrega al final:
+Cada sesión en la nube arranca con un `~/.claude` limpio. En el entorno: **Edit** → **Setup script**, y pega esta línea:
 
 ```bash
-git clone --depth 1 https://github.com/Ingenio-Advice/Skillset-Claude-optimizacion.git ~/skills-optimizacion \
-  && ~/skills-optimizacion/install.sh \
-  || echo "skills-optimizacion: no se pudo instalar; la sesión sigue sin el kit"
+curl -fsSL https://raw.githubusercontent.com/Ingenio-Advice/Skillset-Claude-optimizacion/main/nube/instalar-en-nube.sh | bash
 ```
 
-Se hace una vez por entorno (no por proyecto). Si falla, la sesión arranca igual, sin el kit.
+(Si el repo es privado, usa `GH_TOKEN` o `GITHUB_TOKEN` en el entorno y clona a mano: `git clone https://github.com/Ingenio-Advice/Skillset-Claude-optimizacion.git ~/skills-optimizacion && bash ~/skills-optimizacion/nube/instalar-en-nube.sh`.)
+El script es idempotente y, si falla, la sesión arranca igual, sin el kit.
+
+Nota: el hook `trabajo-afuera` solo actúa en macOS; en la nube no hace nada.
 
 ## Qué instala
 
