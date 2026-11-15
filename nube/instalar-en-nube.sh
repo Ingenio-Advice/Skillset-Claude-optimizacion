@@ -5,6 +5,8 @@
 
 REPO="Ingenio-Advice/Skillset-Claude-optimizacion"
 DIR="$HOME/skills-optimizacion"
+# En un Mac que ya tiene el kit en ~/Developer se usa esa copia: no se crea otra.
+[ "$(uname -s)" = "Darwin" ] && [ -d "$HOME/Developer/skills-optimizacion/.git" ] && DIR="$HOME/Developer/skills-optimizacion"
 TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 if [ -n "$TOKEN" ]; then
   URL="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
