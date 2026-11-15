@@ -17,4 +17,11 @@
 - No leas archivos enteros si basta un fragmento. No leas `node_modules`, builds ni lockfiles.
 - Pide a los agentes respuestas cortas; nunca que devuelvan código o logs completos.
 - Respuestas al usuario: conclusión primero, sin relleno, sin repetir lo que ya se estableció.
+
+## Esperas, pruebas y sesiones (auditoría de tiempos, 7-nov-2026)
+- Prohibido esperar con bucles de `sleep`, `until` o `for … sleep` que revisan una y otra vez. Cada revisión relee todo el contexto y gasta cupo. Lanza el trabajo largo con `run_in_background` y espera el aviso de que terminó; si hace falta un tope, una sola espera larga.
+- Durante un proyecto corre solo las pruebas del módulo que tocaste (`pytest tests/test_<módulo>*.py`). La suite completa (~3.400 pruebas, 40–75 min) va de noche o una vez antes de fusionar, nunca en el camino crítico de un proyecto.
+- Opciones o variantes de diseño (A, B, C) se corren a la vez en el VPS, no una tras otra.
+- Un proyecto se trabaja una etapa por sesión: al cerrar la etapa, `proyecto_flujo cerrar` escribe `TRASPASO.md`. La etapa siguiente arranca en sesión nueva leyendo solo ese archivo. Lo que no quepa en los JSON se anota en `notas_sesion.md` del proyecto.
+- El estado de las auditorías sale de `flujo estado`; no se anuncia nada como lanzado hasta que esté corriendo.
 <!-- skills-optimizacion:fin -->
