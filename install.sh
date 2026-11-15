@@ -4,6 +4,8 @@
 set -euo pipefail
 
 KIT="$(cd "$(dirname "$0")" && pwd)"
+SIN_CODEX=0
+for a in "$@"; do [ "$a" = "--sin-codex" ] && SIN_CODEX=1; done
 DEST="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 mkdir -p "$DEST/agents" "$DEST/skills"
 
@@ -63,6 +65,21 @@ else
   cat "$KIT/config/settings.json"
 fi
 echo "   Respaldo del archivo anterior: $S.bak"
+
+if [ "$SIN_CODEX" = 1 ]; then
+  echo "→ Codex: omitido (--sin-codex)"
+elif [ -d "${CODEX_HOME:-$HOME/.codex}" ] || command -v codex >/dev/null 2>&1; then
+  echo "→ Codex (skills, agentes, reglas compartidas y hooks)"
+  PY=""
+  for c in python3.13 python3.12 python3.11 python3; do
+    if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then PY="$c"; break; fi
+  done
+  if [ -z "$PY" ]; then
+    echo "   Aviso: Codex necesita Python 3.11 o superior y no lo encontré; omito Codex. Luego: python3 $KIT/codex/install.py"
+  else
+    "$PY" "$KIT/codex/install.py" || echo "   Aviso: la instalación de Codex falló; Claude quedó configurado."
+  fi
+fi
 
 echo
 echo "Listo. Cierra y vuelve a abrir Claude Code para que tome la configuración."
