@@ -54,6 +54,17 @@ Solo sugieren; ninguno bloquea ni ejecuta nada por su cuenta.
 
 El instalador los agrega sin borrar tus hooks propios (requiere `python3`; sin él, reemplaza la sección de hooks completa).
 
+## Codex
+
+`install.sh` también configura Codex si detecta `~/.codex` (o `$CODEX_HOME`) o el comando `codex`; `--sin-codex` lo omite. Requiere Python 3.11+ (si no hay, avisa y sigue). Destinos configurables con `CODEX_HOME` (por omisión `~/.codex`) y `AGENTS_HOME` (`~/.agents`). Instala:
+
+- `$AGENTS_HOME/skills/`: `optimizar-desarrollo`, `delegar`, `iniciar-proyecto-eficiente` (enlaces al repo).
+- `$CODEX_HOME/agents/`: los 4 perfiles `.toml` (enlaces al repo) y `[agents]` en `config.toml`.
+- `$CODEX_HOME/AGENTS.md`: bloque entre marcadores con la política de Codex más las secciones compartidas de `config/CLAUDE.md` (una sola fuente).
+- `$CODEX_HOME/hooks.json`: los hooks de `hooks/` (respaldo `.bak`; conserva los tuyos).
+
+Detalle en `codex/GUIA.md`; para solo Codex: `python3 codex/install.py`.
+
 ## Cómo trabajar
 
 1. **Conversa y diseña** normalmente. Para análisis profundo, activa modo plan (Shift+Tab): ahí usa Opus.
