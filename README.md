@@ -5,10 +5,10 @@ Kit transversal para Claude Code. Objetivo: **gastar el modelo caro solo donde p
 | Dónde | Modelo | Qué hace |
 |---|---|---|
 | Conversación contigo | Opus al planear, Sonnet al ejecutar (`opusplan`) | Diseño, arquitectura, decisiones |
-| `explorador` | Haiku | Buscar y ubicar código (solo lectura) |
-| `implementador` | Sonnet | Escribir código según especificación |
-| `verificador` | Haiku | Lint, typecheck, pruebas, build |
-| `revisor` | Sonnet | Revisar el diff antes de push |
+| `explorador` | Haiku 5.5 | Buscar y ubicar código (solo lectura) |
+| `implementador` | Haiku 5.5 | Escribir código según especificación |
+| `verificador` | Haiku 5.5 | Lint, typecheck, pruebas, build |
+| `revisor` | Haiku 5.5 | Revisar el diff antes de push |
 | Cualquier otro agente | Sonnet (por defecto) | — |
 
 ## Instalación (una vez por computador)
@@ -69,4 +69,4 @@ Hábitos que ahorran tanto como el kit:
 
 ## Escalar a Opus
 
-Si Sonnet falla dos veces en lo mismo, el skill `delegar` vuelve a ti en vez de seguir intentando. Tú decides si se escala.
+Si Haiku falla dos veces en lo mismo, el skill `delegar` vuelve a ti en vez de seguir intentando. Tú decides si se escala a Sonnet u Opus.
