@@ -45,7 +45,8 @@ kit_hooks = json.loads(open(sys.argv[2]).read().replace("__KIT__", sys.argv[3]))
 hooks = s.setdefault("hooks", {})
 for ev, entries in kit_hooks.items():
     # Quita versiones anteriores del kit y conserva los hooks propios del usuario
-    keep = [e for e in hooks.get(ev, []) if "skills-optimizacion" not in json.dumps(e) and sys.argv[3] not in json.dumps(e)]
+    keep = [e for e in hooks.get(ev, []) if "skills-optimizacion" not in json.dumps(e) and sys.argv[3] not in json.dumps(e)
+            and ".claude/ganchos/trabajo-afuera.sh" not in json.dumps(e)]
     hooks[ev] = keep + entries
 with open(p, "w") as fh:
     json.dump(s, fh, indent=2, ensure_ascii=False)
