@@ -51,7 +51,7 @@ Solo sugieren; ninguno bloquea ni ejecuta nada por su cuenta.
 |---|---|---|
 | `session-start.sh` | Al abrir una sesión | Si el repo no tiene `.claude/dieta-contexto.md`, Claude te sugiere `/dieta-contexto`. |
 | `prompt-delegar.sh` | Cada mensaje tuyo | Si pides implementar/arreglar/construir, recuerda a Claude usar `delegar`. |
-| `stop-cerrar.sh` | Al terminar Claude | Si hay cambios sin commit, te muestra una línea sugiriendo `/cerrar` (una vez por conjunto de cambios). |
+| `stop-cerrar.sh` | Al terminar Claude | Vigilante de cierre: avisa (una vez por estado) de cambios sin commit, commits sin subir y procesos vivos dentro del repo. |
 
 El instalador los agrega sin borrar tus hooks propios (requiere `python3`; sin él, reemplaza la sección de hooks completa).
 
