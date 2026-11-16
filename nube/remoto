@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# remoto para las sesiones en la nube de Claude Code, que no tienen SSH al VPS.
+# Escribe la solicitud en .remoto/solicitud.json, hace commit de lo pendiente, empuja a la
+# rama claude/* y espera el resultado que deja el workflow de GitHub Actions del repo
+# («Remoto (corridas desde la nube)», de ingenio-devops). Sale con el código del comando.
+#
+# Uso (dentro del repo, en una rama claude/*):
+#   remoto [--traer "rutas"] [--id ID] [--timeout MIN] [--caso RUTA] <args de remoto...>
+#   remoto pruebas
+#   remoto --traer "informes/salida.txt" pruebas
+#   remoto --ayuda
+#
+# --traer: rutas relativas al repo que se traen del VPS al terminar (pase o falle).
+# --caso RUTA: va como "caso" en la solicitud (repos con motor por casos, p. ej. ejemplos/...).
+# En un Mac con ~/Developer/ingenio-devops/remoto/remoto.sh y ~/.ssh/elector_vps, este
+# comando corre ese remoto.sh directo; --traer llega como REMOTO_TRAER.
+# Variables para pruebas: REMOTO_ESPERA_SEG (30) y REMOTO_ESPERA_MAX_SEG (21600).
+
+set -euo pipefail
+
+prog="remoto"
+fallar() {
+  echo "$prog: $1" >&2
+  exit 1
+}
+
+uso() {
+  sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
+
+traer=""
+id=""
+timeout_min="300"
+comando=()
+caso=()
+[ "$#" -gt 0 ] || { uso; exit 1; }
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --ayuda|-h) uso; exit 0 ;;
+    --traer)   [ "$#" -ge 2 ] || fallar "--traer necesita rutas"; traer="$2"; shift 2 ;;
+    --id)      [ "$#" -ge 2 ] || fallar "--id necesita un valor"; id="$2"; shift 2 ;;
+    --timeout) [ "$#" -ge 2 ] || fallar "--timeout necesita minutos"; timeout_min="$2"; shift 2 ;;
+    --caso)    [ "$#" -ge 2 ] || fallar "--caso necesita una ruta"; caso+=("$2"); shift 2 ;;
+    *) comando+=("$1"); shift ;;
+  esac
+done
+[ "${#comando[@]}" -gt 0 ] || fallar "falta el comando de remoto (p. ej. pruebas)"
+
+# En un Mac con el ingenio-devops clonado y la llave, corre ese remoto.sh directo.
+remoto_local="$HOME/Developer/ingenio-devops/remoto/remoto.sh"
+if [ -f "$remoto_local" ] && [ -f "$HOME/.ssh/elector_vps" ]; then
+  argumentos=("${comando[@]}")
+  if [ "${#caso[@]}" -gt 0 ]; then argumentos+=("${caso[@]}"); fi
+  REMOTO_TRAER="$traer" exec "$remoto_local" "${argumentos[@]}"
+fi
+
+# Desde aquí: nube. Se valida todo antes de tocar git.
+[[ "$timeout_min" =~ ^[0-9]+$ ]] && [ "$timeout_min" -ge 1 ] && [ "$timeout_min" -le 340 ] \
+  || fallar "--timeout debe ser un entero de 1 a 340"
+if [ -z "$id" ]; then
+  id="$(date -u +%Y%m%d-%H%M%S)-$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')"
+fi
+[[ "$id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] \
+  || fallar "--id no válido (letras, números, . _ -; máximo 64 caracteres)"
+
+rutas_traer=()
+if [ -n "$traer" ]; then read -r -a rutas_traer <<< "$traer"; fi
+for ruta in ${rutas_traer[@]+"${rutas_traer[@]}"}; do
+  printf '%s' "$ruta" | grep -Eq '^[A-Za-z0-9_.][A-Za-z0-9._/-]*$' && [[ "$ruta" != *..* ]] \
+    || fallar "--traer con ruta no permitida: '$ruta' (relativa al repo, sin '..')"
+done
+for argumento in "${comando[@]}"; do
+  case "$argumento" in
+    *$'\n'*|*$'\r'*) fallar "los argumentos no pueden tener saltos de línea" ;;
+  esac
+done
+
+raiz="$(git rev-parse --show-toplevel 2>/dev/null)" || fallar "hay que correrlo dentro de un repo git"
+rama="$(git -C "$raiz" symbolic-ref --short -q HEAD || true)"
+case "$rama" in
+  claude/*) ;;
+  *) fallar "estás en la rama '${rama:-(suelta)}'; la corrida necesita una rama claude/<tema>" ;;
+esac
+git -C "$raiz" remote get-url origin >/dev/null 2>&1 || fallar "el repo no tiene remoto origin"
+[ -f "$raiz/.github/workflows/remoto.yml" ] \
+  || fallar "este repo no tiene .github/workflows/remoto.yml; sin él no correrá nada. Engánchalo con remoto/enganchar-repos.sh de ingenio-devops"
+
+# La solicitud. Con python3 -I (modo aislado) para no depender de jq.
+mkdir -p "$raiz/.remoto"
+python3 -I - "$raiz/.remoto/solicitud.json" "$id" "$timeout_min" "$traer" "${caso[0]:-}" "${comando[@]}" <<'PY'
+import json, sys
+ruta, id_, minutos, traer, caso, *comando = sys.argv[1:]
+datos = {"id": id_, "comando": comando, "traer": traer.split(), "timeout_min": int(minutos)}
+if caso:
+    datos["caso"] = caso
+with open(ruta, "w", encoding="utf-8") as f:
+    json.dump(datos, f, ensure_ascii=False, indent=2)
+    f.write("\n")
+PY
+
+# Se confirma todo lo pendiente: el VPS prueba el commit tal cual, no el árbol del Mac.
+git -C "$raiz" add .remoto/solicitud.json
+git -C "$raiz" add -A
+identidad=()
+git -C "$raiz" config user.email >/dev/null 2>&1 \
+  || identidad=(-c user.name="Claude Code" -c user.email="noreply@anthropic.com")
+if ! git -C "$raiz" diff --cached --quiet; then
+  git -C "$raiz" ${identidad[@]+"${identidad[@]}"} commit -q -m "remoto: $id"
+fi
+# Si el workflow ya dejó resultados en la rama, se pone el commit encima.
+if git -C "$raiz" ls-remote --exit-code --heads origin "$rama" >/dev/null 2>&1; then
+  git -C "$raiz" pull --rebase -q origin "$rama" || fallar "no pude poner el commit sobre la rama remota (¿conflicto?)"
+fi
+git -C "$raiz" push -q origin "$rama" || fallar "no pude subir la rama $rama"
+
+echo "$prog: corrida enviada (id $id, rama $rama). Espera de hasta 6 h."
+echo "$prog: si el repo no tiene .github/workflows/remoto.yml, no correrá: avisa al usuario."
+
+# Espera: consulta la rama cada REMOTO_ESPERA_SEG segundos y pone un punto cada 5 min.
+intervalo="${REMOTO_ESPERA_SEG:-30}"
+maximo="${REMOTO_ESPERA_MAX_SEG:-21600}"
+resultado=".remoto/resultados/$id/estado.json"
+inicio=$SECONDS
+ultimo_punto=$SECONDS
+while ! git -C "$raiz" fetch -q origin "+refs/heads/$rama:refs/remotes/origin/$rama" 2>/dev/null \
+  || ! git -C "$raiz" cat-file -e "origin/$rama:$resultado" 2>/dev/null; do
+  if [ $((SECONDS - inicio)) -ge "$maximo" ]; then
+    echo >&2
+    fallar "sin resultado tras ${maximo} s de espera; revisa la pestaña Actions del repo"
+  fi
+  if [ $((SECONDS - ultimo_punto)) -ge 300 ]; then
+    printf '.' >&2
+    ultimo_punto=$SECONDS
+  fi
+  sleep "$intervalo"
+done
+echo >&2
+
+git -C "$raiz" pull --rebase -q origin "$rama" || fallar "no pude traer el resultado (pull --rebase)"
+echo "--- log.txt"
+cat "$raiz/.remoto/resultados/$id/log.txt" 2>/dev/null || echo "(sin log.txt)"
+python3 -I - "$raiz/$resultado" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    d = json.load(f)
+print(f"--- resultado: código {d['codigo']} (sha {str(d['sha'])[:7]}, {d['inicio']} a {d['fin']})")
+print(f"run: {d.get('run_url', '')}")
+omitidos = d.get("omitidos") or []
+if omitidos:
+    print("omitidos por pesar más de 50 MB:")
+    for ruta in omitidos:
+        print(f"  - {ruta}")
+PY
+codigo="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["codigo"])' "$raiz/$resultado")"
+[[ "$codigo" =~ ^[0-9]+$ ]] || fallar "estado.json sin código válido"
+exit "$codigo"

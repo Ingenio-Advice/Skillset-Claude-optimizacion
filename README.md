@@ -39,6 +39,7 @@ Nota: el hook `trabajo-afuera` solo actúa en macOS; en la nube no hace nada.
 
 - `~/.claude/agents/`: los 4 agentes con su modelo fijo.
 - `~/.claude/skills/`: `delegar`, `cerrar`, `dieta-contexto`.
+- `~/.local/bin/remoto` (solo en la nube, no en Mac): `nube/remoto` corre el comando en el VPS de pruebas por GitHub Actions y trae resultados (`remoto --ayuda`).
 - `~/.claude/CLAUDE.md`: bloque de reglas de consumo (entre marcadores; se reemplaza al reinstalar y no toca tus otras reglas).
 - `~/.claude/settings.json`: `model: opusplan`, `CLAUDE_CODE_SUBAGENT_MODEL: sonnet` y los hooks. Deja un respaldo `.bak`.
 
