@@ -24,5 +24,12 @@ else
   fi
 fi
 
+# El cliente remoto va en ~/.local/bin (en la nube). En un Mac lo usa ingenio-devops, no se toca.
+if [ "$(uname -s)" != "Darwin" ] && [ -f "$DIR/nube/remoto" ]; then
+  mkdir -p "$HOME/.local/bin" && cp "$DIR/nube/remoto" "$HOME/.local/bin/remoto" && chmod 755 "$HOME/.local/bin/remoto" \
+    || echo "AVISO remoto: no pude instalar el cliente en ~/.local/bin."
+  grep -qs '\.local/bin' "$HOME/.bashrc" || echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+fi
+
 bash "$DIR/install.sh" || echo "AVISO skills-optimizacion: install.sh falló; la sesión sigue sin el kit."
 exit 0
