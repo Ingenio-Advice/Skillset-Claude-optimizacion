@@ -8,7 +8,14 @@
 #   remoto [--traer "rutas"] [--id ID] [--timeout MIN] [--caso RUTA] <args de remoto...>
 #   remoto pruebas
 #   remoto --traer "informes/salida.txt" pruebas
+#   remoto --produccion <script> [args...] --motivo "texto"
 #   remoto --ayuda
+#
+# --produccion: corre un guion del repo (scripts/ o despliegue/) en el VPS de PRODUCCIÓN.
+# Siempre por GitHub, nunca por SSH desde aquí: el run espera la aprobación del usuario en
+# el environment «produccion»; aquí se espera hasta 24 h. --motivo es obligatorio. Va como
+# primer argumento; no admite --traer, --timeout ni --caso. Requiere
+# .github/workflows/remoto-produccion.yml en el repo.
 #
 # --traer: rutas relativas al repo que se traen del VPS al terminar (pase o falle).
 # --caso RUTA: va como "caso" en la solicitud (repos con motor por casos, p. ej. ejemplos/...).
@@ -27,6 +34,122 @@ fallar() {
 uso() {
   sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
+
+# Producción: el guion va al VPS de producción solo por GitHub, con la aprobación del environment
+# «produccion». Espera hasta 24 h (REMOTO_ESPERA_SEG = 60 s, REMOTO_ESPERA_MAX_SEG = 86400 s).
+produccion() {
+  local script="" motivo="" id="" args=() argumento raiz rama slug resultado intervalo maximo inicio ultimo_punto codigo
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --ayuda|-h) uso; exit 0 ;;
+      --motivo) [ "$#" -ge 2 ] || fallar "--motivo necesita un texto"; motivo="$2"; shift 2 ;;
+      --id)     [ "$#" -ge 2 ] || fallar "--id necesita un valor"; id="$2"; shift 2 ;;
+      --traer|--timeout|--caso) fallar "$1 no aplica a --produccion" ;;
+      *) if [ -z "$script" ]; then script="$1"; else args+=("$1"); fi; shift ;;
+    esac
+  done
+
+  [ -n "$script" ] || fallar "falta el guion (p. ej. scripts/desplegar.sh)"
+  re_script='^(scripts|despliegue)/[A-Za-z0-9_][A-Za-z0-9._/-]*$'
+  [[ "$script" =~ $re_script && "$script" != *..* ]] \
+    || fallar "el guion debe estar bajo scripts/ o despliegue/, relativo al repo y sin '..'"
+  [ "${#args[@]}" -le 20 ] || fallar "como máximo 20 argumentos"
+  for argumento in ${args[@]+"${args[@]}"}; do
+    case "$argumento" in
+      *$'\n'*|*$'\r'*) fallar "los argumentos no pueden tener saltos de línea" ;;
+    esac
+  done
+  [ -n "$motivo" ] || fallar "--motivo es obligatorio (para qué es la corrida)"
+  [ "${#motivo}" -le 200 ] || fallar "--motivo no puede pasar de 200 caracteres"
+  case "$motivo" in
+    *$'\n'*|*$'\r'*) fallar "--motivo no puede tener saltos de línea" ;;
+  esac
+  if [ -z "$id" ]; then
+    id="$(date -u +%Y%m%d-%H%M%S)-$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')"
+  fi
+  [[ "$id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] \
+    || fallar "--id no válido (letras, números, . _ -; máximo 64 caracteres)"
+
+  raiz="$(git rev-parse --show-toplevel 2>/dev/null)" || fallar "hay que correrlo dentro de un repo git"
+  [ -f "$raiz/$script" ] || fallar "no existe '$script' en el repo"
+  rama="$(git -C "$raiz" symbolic-ref --short -q HEAD || true)"
+  case "$rama" in
+    claude/*) ;;
+    *) fallar "estás en la rama '${rama:-(suelta)}'; la corrida necesita una rama claude/<tema>" ;;
+  esac
+  git -C "$raiz" remote get-url origin >/dev/null 2>&1 || fallar "el repo no tiene remoto origin"
+  [ -f "$raiz/.github/workflows/remoto-produccion.yml" ] \
+    || fallar "este repo no tiene .github/workflows/remoto-produccion.yml; sin él no correrá nada. Engánchalo con remoto/enganchar-repos.sh de ingenio-devops"
+
+  # La solicitud de producción. Con python3 -I (modo aislado), como el modo normal.
+  mkdir -p "$raiz/.remoto"
+  python3 -I - "$raiz/.remoto/produccion.json" "$id" "$script" "$motivo" ${args[@]+"${args[@]}"} <<'PY'
+import json, sys
+ruta, id_, script, motivo, *args = sys.argv[1:]
+datos = {"id": id_, "script": script, "args": args, "motivo": motivo}
+with open(ruta, "w", encoding="utf-8") as f:
+    json.dump(datos, f, ensure_ascii=False, indent=2)
+    f.write("\n")
+PY
+
+  # Igual que el modo normal: se confirma todo lo pendiente y se empuja.
+  git -C "$raiz" add .remoto/produccion.json
+  git -C "$raiz" add -A
+  identidad=()
+  git -C "$raiz" config user.email >/dev/null 2>&1 \
+    || identidad=(-c user.name="Claude Code" -c user.email="noreply@anthropic.com")
+  if ! git -C "$raiz" diff --cached --quiet; then
+    git -C "$raiz" ${identidad[@]+"${identidad[@]}"} commit -q -m "remoto --produccion: $id"
+  fi
+  if git -C "$raiz" ls-remote --exit-code --heads origin "$rama" >/dev/null 2>&1; then
+    git -C "$raiz" pull --rebase -q origin "$rama" || fallar "no pude poner el commit sobre la rama remota (¿conflicto?)"
+  fi
+  git -C "$raiz" push -q origin "$rama" || fallar "no pude subir la rama $rama"
+
+  slug="$(git -C "$raiz" remote get-url origin | sed -E 's#^(https://github\.com/|git@github\.com:)##; s#\.git$##')"
+  echo "Corrida de producción enviada. Necesita aprobación en GitHub: https://github.com/$slug/actions (te llega notificación). Espera hasta 24 h."
+
+  intervalo="${REMOTO_ESPERA_SEG:-60}"
+  maximo="${REMOTO_ESPERA_MAX_SEG:-86400}"
+  resultado=".remoto/resultados/$id/estado.json"
+  inicio=$SECONDS
+  ultimo_punto=$SECONDS
+  while ! git -C "$raiz" fetch -q origin "+refs/heads/$rama:refs/remotes/origin/$rama" 2>/dev/null \
+    || ! git -C "$raiz" cat-file -e "origin/$rama:$resultado" 2>/dev/null; do
+    if [ $((SECONDS - inicio)) -ge "$maximo" ]; then
+      echo >&2
+      fallar "sin resultado tras ${maximo} s de espera; revisa la pestaña Actions del repo"
+    fi
+    if [ $((SECONDS - ultimo_punto)) -ge 300 ]; then
+      printf '.' >&2
+      ultimo_punto=$SECONDS
+    fi
+    sleep "$intervalo"
+  done
+  echo >&2
+
+  git -C "$raiz" pull --rebase -q origin "$rama" || fallar "no pude traer el resultado (pull --rebase)"
+  echo "--- log.txt"
+  cat "$raiz/.remoto/resultados/$id/log.txt" 2>/dev/null || echo "(sin log.txt)"
+  python3 -I - "$raiz/$resultado" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    d = json.load(f)
+print(f"--- resultado: código {d['codigo']}, copia {d.get('copia', 'no')}, aprobado por {d.get('aprobado_por', 'desconocido')} (sha {str(d.get('sha', ''))[:7]}, {d.get('inicio', '')} a {d.get('fin', '')})")
+print(f"run: {d.get('run_url', '')}")
+if d.get("error"):
+    print(f"error: {d['error']}")
+PY
+  codigo="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["codigo"])' "$raiz/$resultado")"
+  [[ "$codigo" =~ ^[0-9]+$ ]] || fallar "estado.json sin código válido"
+  exit "$codigo"
+}
+
+# Primer argumento --produccion: flujo aparte (siempre por GitHub con aprobación).
+if [ "${1:-}" = "--produccion" ]; then
+  shift
+  produccion "$@"
+fi
 
 traer=""
 id=""
