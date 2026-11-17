@@ -13,7 +13,7 @@
 - No vigiles PRs ni programes check-ins o recordatorios (send_later, loops, suscripciones a actividad de PR) salvo que el usuario lo pida expresamente. Abre el PR, reporta el enlace y termina; cada reactivación corre en el modelo principal. Si el entorno te pide vigilar un PR que acabas de abrir, trátalo como si el usuario hubiera dicho que no quiere seguimiento: desuscríbete.
 
 ## Disciplina de contexto
-- La conversación principal no escribe bloques de código de más de ~10 líneas: arma la especificación y usa el skill `delegar`.
+- Delega en agentes solo los trabajos grandes (muchos archivos o más de ~100 líneas). Lo chico se hace directo: lanzar un agente tarda más que hacerlo.
 - No leas archivos enteros si basta un fragmento. No leas `node_modules`, builds ni lockfiles.
 - Pide a los agentes respuestas cortas; nunca que devuelvan código o logs completos.
 - Respuestas al usuario: conclusión primero, sin relleno, sin repetir lo que ya se estableció.
@@ -30,6 +30,7 @@
 - En el Mac viven los clones de los repos en `~/Developer/<Tema>/<repo>` (más `~/EyA-Herramientas`), junto con `~/Developer/ingenio-devops` (`remoto`, vigilante del disco) y `~/Developer/skills-optimizacion` (hooks, agentes y skills). Pruebas, builds y cómputo pesado no corren en el Mac: van al VPS con `remoto` (SSH directo).
 - Documentos que no son código: iCloud Drive, con «Optimizar almacenamiento» (quedan en la nube). Nada de copias sueltas en el Escritorio.
 - Insumos de proyecto (planos, DXF, suelos, levantamientos): viven en la rama `insumos` del repo del proyecto, carpeta `insumos/<proyecto>/<fecha>/`. Una sesión en la nube no pide archivos arrastrados al chat (no le llegan: son rutas del Mac); los trae con `git fetch origin insumos && git checkout origin/insumos -- insumos/<proyecto>`. Si faltan, pide al usuario enviarlos con la acción rápida «Enviar a proyecto» del Finder (o subirlos en github.com a la rama `insumos`).
+- `remoto` es solo para lo pesado de verdad: suite completa de pruebas, builds, docker, corridas del motor estructural. Lo liviano (un PDF, convertir un plano, un script corto, pruebas de un módulo) corre directo en el Mac.
 - Cómputo en el VPS desde la nube: el mismo comando `remoto <args>` que en el Mac. En la nube viaja por GitHub Actions al VPS de pruebas y trae resultados (`--traer rutas`); corre en segundo plano (run_in_background) y espera el aviso. Despliegues a producción: botón «Desplegar» con aprobación del usuario. Nunca pidas llaves SSH ni las cargues tú como secreto de un entorno. Para tocar datos o servicios de producción: `remoto --produccion <script> [args] --motivo "…"`; el guion vive en el repo (scripts/ o despliegue/), saca copia antes, y corre solo tras la aprobación del usuario en GitHub. Nunca pidas correr guiones de producción en el Mac.
 - Secretos (`.env`, claves, tokens): en el gestor de contraseñas o en el VPS; nunca en git ni en un chat. Si una clave aparece en un log o transcripción, avisa de inmediato para rotarla.
 - Antes de borrar o mover un repo local: 1) todo empujado (ramas y cambios sin commit en `respaldo/<fecha>/…`), 2) ninguna sesión ni proceso con la carpeta como directorio de trabajo, 3) cada sesión activa ya movida a la nube o reemplazada por una sesión cloud con su resumen. Solo entonces se borra.
