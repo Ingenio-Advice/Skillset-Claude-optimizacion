@@ -141,8 +141,9 @@ main() {
   [ "$prev" = "$sum" ] && return 0
   printf '%s\n' "$sum" > "$mark" 2>/dev/null
 
-  msg="Pendiente: $partes. Antes de terminar: sube el trabajo (commit y push a tu rama claude/…) y apaga los procesos que ya no se necesitan para liberar memoria (kill <pid>). Si alguno debe seguir corriendo a propósito, dilo al usuario en tu respuesta y termina."
-  printf '{"decision":"block","reason":"%s"}\n' "$(json_esc "$msg")"
+  msg="Pendiente: $partes. Recuerda: sube el trabajo (commit y push a tu rama claude/…) y apaga los procesos que ya no se necesitan para liberar memoria (kill <pid>). Si alguno debe seguir corriendo a propósito, dilo al usuario en tu respuesta y termina."
+  # Solo avisa (no bloquea): forzar otra vuelta a la sesión costaba tiempo y cupo.
+  printf '{"systemMessage":"%s"}\n' "$(json_esc "$msg")"
   return 0
 }
 
