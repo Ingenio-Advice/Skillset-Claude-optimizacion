@@ -3,7 +3,7 @@
 
 ## Reparto de modelos
 - La conversación principal (diseño, arquitectura, decisiones) usa el modelo elegido por el usuario.
-- Todo trabajo mecánico se delega en agentes con modelo más económico:
+- Las respuestas, análisis y tareas cortas los hace directo el modelo principal (el que eligió el usuario, p. ej. Opus). Los agentes con modelo económico (Sonnet o Haiku) se usan solo cuando la tarea de verdad requiere activar agentes (procesos complejos o grandes, vía el skill `delegar`):
   - `explorador` (Haiku 5.5): buscar y ubicar código. Úsalo antes de leer más de 3 archivos.
   - `implementador` (Haiku 5.5): escribir código a partir de una especificación cerrada.
   - `verificador` (Haiku 5.5): lint, typecheck, pruebas, build.
