@@ -29,6 +29,8 @@ if grep -q "skills-optimizacion:inicio" "$MD"; then
   # Reemplaza el bloque existente por la versión actual
   awk '/skills-optimizacion:inicio/{skip=1} !skip{print} /skills-optimizacion:fin/{skip=0}' "$MD" > "$MD.tmp" && mv "$MD.tmp" "$MD"
 fi
+# Quita las líneas en blanco del final antes de agregar el bloque (antes se sumaba una por instalación)
+awk '{l[NR]=$0} END{n=NR; while (n>0 && l[n] ~ /^[[:space:]]*$/) n--; for (i=1;i<=n;i++) print l[i]}' "$MD" > "$MD.tmp" && mv "$MD.tmp" "$MD"
 { [ -s "$MD" ] && echo; cat "$KIT/config/CLAUDE.md"; } >> "$MD"
 
 echo "→ Modelo y agentes por defecto (~/.claude/settings.json)"
